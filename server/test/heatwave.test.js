@@ -34,3 +34,16 @@ test('buildNotifications only returns alerts for high-risk regions', () => {
   assert.equal(notifications[0].severity, 'Critical');
   assert.equal(notifications[1].severity, 'High');
 });
+
+test('calculateHeatIndex handles null/NaN/invalid parameters gracefully', () => {
+  const defaultVal = calculateHeatIndex(NaN, null);
+  const baseline = calculateHeatIndex(35, 40); // defaults to 35 and 40
+
+  assert.equal(defaultVal, baseline);
+});
+
+test('getRiskLevel handles null/NaN/invalid parameters gracefully', () => {
+  assert.equal(getRiskLevel(NaN), 'Low');
+  assert.equal(getRiskLevel(null), 'Low');
+});
+

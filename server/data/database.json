@@ -1,0 +1,210 @@
+{
+  "regions": [
+    {
+      "name": "Delhi NCR",
+      "query": "Delhi NCR, India",
+      "latitude": 28.6139,
+      "longitude": 77.209,
+      "populationAtRisk": "1.2M",
+      "riskLevel": "Moderate",
+      "temperature": 38.5,
+      "humidity": 42,
+      "apparentTemperature": 43.1,
+      "heatIndex": 44.2,
+      "summary": "Delhi NCR is currently at moderate heat risk."
+    },
+    {
+      "name": "Jaipur",
+      "query": "Jaipur, Rajasthan, India",
+      "latitude": 26.9124,
+      "longitude": 75.7873,
+      "populationAtRisk": "850K",
+      "riskLevel": "High",
+      "temperature": 41.2,
+      "humidity": 35,
+      "apparentTemperature": 46.8,
+      "heatIndex": 47.5,
+      "summary": "Jaipur is currently at high heat risk."
+    },
+    {
+      "name": "Nagpur",
+      "query": "Nagpur, Maharashtra, India",
+      "latitude": 21.1458,
+      "longitude": 79.0882,
+      "populationAtRisk": "950K",
+      "riskLevel": "High",
+      "temperature": 42,
+      "humidity": 38,
+      "apparentTemperature": 48,
+      "heatIndex": 49.1,
+      "summary": "Nagpur is currently at high heat risk."
+    }
+  ],
+  "advisories": [
+    {
+      "id": "adv-1",
+      "title": "Prevent Heat Stroke & Heat Exhaustion",
+      "category": "Medical",
+      "severity": "Critical",
+      "targetAudience": "General Public & Outdoor Workers",
+      "content": "Drink at least 3-4 liters of water daily. Avoid alcohol, caffeine, and carbonated drinks. Wear lightweight, loose, light-colored cotton clothing.",
+      "doList": [
+        "Stay hydrated with ORS, buttermilk, or lemon water",
+        "Cover your head with a cloth or umbrella when outside",
+        "Keep animals in shaded areas with fresh water"
+      ],
+      "dontList": [
+        "Do not step out between 12:00 PM and 3:30 PM",
+        "Do not leave children or pets inside parked vehicles",
+        "Do not consume high-protein foods during heat peaks"
+      ]
+    },
+    {
+      "id": "adv-2",
+      "title": "Agricultural & Livestock Heat Protection",
+      "category": "Agriculture",
+      "severity": "High",
+      "targetAudience": "Farmers & Livestock Keepers",
+      "content": "Schedule crop irrigation during early morning or evening hours to prevent water loss via evaporation. Provide cooling sheds and water sprayers for cattle.",
+      "doList": [
+        "Apply mulch to retain soil moisture",
+        "Provide continuous clean drinking water for poultry & livestock",
+        "Use shade nets for delicate nurseries"
+      ],
+      "dontList": [
+        "Avoid spraying pesticides during maximum daylight temperatures",
+        "Do not overcrowd animal shelters"
+      ]
+    },
+    {
+      "id": "adv-3",
+      "title": "Urban Heat Island Mitigation",
+      "category": "Urban Planning",
+      "severity": "Moderate",
+      "targetAudience": "Municipal & Field Workers",
+      "content": "Deploy water sprinkling trucks across major asphalt corridors and high-density markets. Keep community cooling shelters open 24/7.",
+      "doList": [
+        "Set up hydration booths at bus stops and metro hubs",
+        "Paint roofs with reflective white thermal paint (Cool Roofs)",
+        "Ensure public parks remain open during daytime hours"
+      ],
+      "dontList": [
+        "Avoid unnecessary outdoor construction during peak afternoon hours",
+        "Do not burn organic waste in urban centers"
+      ]
+    }
+  ],
+  "coolingCenters": [
+    {
+      "id": "r1",
+      "name": "Central District Cooling Hub #1",
+      "type": "Cooling Shelter",
+      "address": "Connaught Place Sector 4, New Delhi",
+      "capacity": 350,
+      "currentOccupancy": 120,
+      "status": "Active",
+      "contacts": "+91 11 2345 6789"
+    },
+    {
+      "id": "r2",
+      "name": "Vidarbha Heat Relief Camp",
+      "type": "Hydration Station",
+      "address": "Sitabuldi Interchange, Nagpur",
+      "capacity": 600,
+      "currentOccupancy": 280,
+      "status": "Active",
+      "contacts": "+91 712 987 6543"
+    },
+    {
+      "id": "r3",
+      "name": "Pink City Thermal Protection Center",
+      "type": "Medical Emergency Ward",
+      "address": "MI Road, Jaipur",
+      "capacity": 200,
+      "currentOccupancy": 95,
+      "status": "Active",
+      "contacts": "+91 141 555 0199"
+    },
+    {
+      "id": "r4",
+      "name": "Yamuna Bank Water & Shelter Unit",
+      "type": "Cooling Shelter",
+      "address": "Kashmere Gate, Delhi",
+      "capacity": 450,
+      "currentOccupancy": 310,
+      "status": "Active",
+      "contacts": "+91 11 8888 2222"
+    }
+  ],
+  "awsStations": [
+    {
+      "id": "aws-1",
+      "name": "Delhi North-West Station",
+      "region": "Delhi NCR",
+      "latitude": 28.7041,
+      "longitude": 77.1025,
+      "status": "Active",
+      "temperature": 38.2,
+      "humidity": 41,
+      "windSpeed": 12,
+      "lastUpdated": "2026-08-18T09:28:53.807Z"
+    },
+    {
+      "id": "aws-2",
+      "name": "Jaipur Sanganer Airport Station",
+      "region": "Jaipur",
+      "latitude": 26.8284,
+      "longitude": 75.8056,
+      "status": "Active",
+      "temperature": 40.8,
+      "humidity": 36,
+      "windSpeed": 14,
+      "lastUpdated": "2026-08-18T09:28:53.808Z"
+    },
+    {
+      "id": "aws-3",
+      "name": "Nagpur Airport Station",
+      "region": "Nagpur",
+      "latitude": 21.0922,
+      "longitude": 79.0472,
+      "status": "Active",
+      "temperature": 41.9,
+      "humidity": 39,
+      "windSpeed": 10,
+      "lastUpdated": "2026-08-18T09:28:53.808Z"
+    }
+  ],
+  "securityLogs": [
+    {
+      "id": "log-1",
+      "timestamp": "2026-08-18T08:28:53.808Z",
+      "type": "INFO",
+      "event": "System startup: AWS validation framework enabled",
+      "details": "Configured z-score threshold: 3.5"
+    },
+    {
+      "id": "log-2",
+      "timestamp": "2026-08-18T08:38:53.808Z",
+      "type": "SUCCESS",
+      "event": "Delhi North-West Station validated",
+      "details": "Variance from satellite: +0.3°C (Status: VALID)"
+    },
+    {
+      "id": "log-3",
+      "timestamp": "2026-08-18T08:48:53.808Z",
+      "type": "SUCCESS",
+      "event": "Jaipur Sanganer Airport Station validated",
+      "details": "Variance from satellite: -0.4°C (Status: VALID)"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-1",
+      "region": "Jaipur",
+      "severity": "High",
+      "title": "Jaipur Regional Alert",
+      "message": "High thermal stress observed in Jaipur. Public advisory active.",
+      "timestamp": "2026-08-18T09:28:53.808Z"
+    }
+  ]
+}

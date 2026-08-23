@@ -19,8 +19,8 @@ export function round(value, digits = 0) {
 }
 
 export function calculateHeatIndex(temperature, humidity) {
-  const t = temperature;
-  const r = humidity;
+  const t = typeof temperature === 'number' && !isNaN(temperature) ? temperature : 35;
+  const r = typeof humidity === 'number' && !isNaN(humidity) ? humidity : 40;
 
   return round(
     -8.784695 + 1.61139411 * t + 2.338549 * r - 0.14611605 * t * r - 0.012308094 * t * t - 0.016424828 * r * r +
@@ -30,9 +30,10 @@ export function calculateHeatIndex(temperature, humidity) {
 }
 
 export function getRiskLevel(heatIndex) {
-  if (heatIndex >= 50) return 'Severe';
-  if (heatIndex >= 46) return 'High';
-  if (heatIndex >= 41) return 'Moderate';
+  const hi = typeof heatIndex === 'number' && !isNaN(heatIndex) ? heatIndex : 35;
+  if (hi >= 50) return 'Severe';
+  if (hi >= 46) return 'High';
+  if (hi >= 41) return 'Moderate';
   return 'Low';
 }
 

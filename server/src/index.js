@@ -5,9 +5,14 @@ import {
   buildNotifications,
   calculateHeatIndex,
   getRiskLevel,
-  regions,
   round
 } from './heatwave.js';
+import {
+  getRegions,
+  addRegion,
+  updateRegionWeather,
+  getAlerts
+} from './db.js';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -103,8 +108,8 @@ async function getNasaPowerSnapshot(latitude, longitude) {
 
 function summarizeRegion(region, openMeteoData, nasaData) {
   const current = openMeteoData.current || {};
-  const humidity = Number(current.relative_humidity_2m ?? 0);
-  const temperature = Number(current.temperature_2m ?? 0);
+  const humidity = Number(current.relative_humidity_2m ?? 40);
+  const temperature = Number(current.temperature_2m ?? 38);
   const heatIndex = calculateHeatIndex(temperature, humidity);
   const riskLevel = getRiskLevel(heatIndex);
   const nasaParameters = nasaData?.properties?.parameter || {};
@@ -121,6 +126,7 @@ function summarizeRegion(region, openMeteoData, nasaData) {
     apparentTemperature: round(Number(current.apparent_temperature ?? heatIndex), 1),
     heatIndex,
     riskLevel,
+    populationAtRisk: region.populationAtRisk || '800K',
     summary: `${region.name} is currently at ${riskLevel.toLowerCase()} heat risk.`,
     nassaPowerDaily: nasaValue ?? null,
     advisories: buildAdvisories({ name: region.name, riskLevel })
@@ -128,7 +134,7 @@ function summarizeRegion(region, openMeteoData, nasaData) {
 }
 
 async function buildRegionData(region) {
-  const coordinates = await getCoordinates(region.query);
+  const coordinates = region.latitude && region.longitude ? region : await getCoordinates(region.query);
   const [openMeteoData, nasaData] = await Promise.all([
     getWeatherSnapshot(coordinates.latitude, coordinates.longitude),
     getNasaPowerSnapshot(coordinates.latitude, coordinates.longitude)
@@ -171,6 +177,7 @@ function getMockDashboardData() {
       apparentTemperature: 43.1,
       heatIndex: 44.2,
       riskLevel: 'Moderate',
+      populationAtRisk: '1.2M',
       summary: 'Delhi NCR is currently at moderate heat risk.',
       nassaPowerDaily: null,
       advisories: buildAdvisories({ name: 'Delhi NCR', riskLevel: 'Moderate' })
@@ -185,6 +192,7 @@ function getMockDashboardData() {
       apparentTemperature: 46.8,
       heatIndex: 47.5,
       riskLevel: 'High',
+      populationAtRisk: '850K',
       summary: 'Jaipur is currently at high heat risk.',
       nassaPowerDaily: null,
       advisories: buildAdvisories({ name: 'Jaipur', riskLevel: 'High' })
@@ -199,6 +207,7 @@ function getMockDashboardData() {
       apparentTemperature: 48.0,
       heatIndex: 49.1,
       riskLevel: 'High',
+      populationAtRisk: '950K',
       summary: 'Nagpur is currently at high heat risk.',
       nassaPowerDaily: null,
       advisories: buildAdvisories({ name: 'Nagpur', riskLevel: 'High' })
@@ -213,6 +222,7 @@ function getMockDashboardData() {
     },
     regions: mockRegions,
     notifications: buildNotifications(mockRegions),
+    alerts: [],
     generatedAt: new Date().toISOString(),
     sources: ['Open-Meteo (Fallback)', 'Nominatim']
   };
@@ -220,9 +230,26 @@ function getMockDashboardData() {
 
 app.get('/api/dashboard', async (_request, response) => {
   try {
-    const regionsData = await Promise.all(regions.map((region) => buildRegionData(region)));
+    const dbRegions = await getRegions();
+    const regionsData = await Promise.all(dbRegions.map(async (region) => {
+      try {
+        const coordinates = { latitude: region.latitude, longitude: region.longitude };
+        const [openMeteoData, nasaData] = await Promise.all([
+          getWeatherSnapshot(coordinates.latitude, coordinates.longitude),
+          getNasaPowerSnapshot(coordinates.latitude, coordinates.longitude)
+        ]);
+        const updated = summarizeRegion(region, openMeteoData, nasaData);
+        await updateRegionWeather(region.name, updated);
+        return updated;
+      } catch (err) {
+        console.warn(`Failed to update weather for ${region.name}:`, err.message);
+        return region;
+      }
+    }));
+
+    const activeAlerts = await getAlerts();
     const summary = {
-      activeAlerts: regionsData.filter((region) => region.riskLevel === 'Severe' || region.riskLevel === 'High').length,
+      activeAlerts: regionsData.filter((region) => region.riskLevel === 'Severe' || region.riskLevel === 'High').length + activeAlerts.length,
       highRiskDistricts: regionsData.filter((region) => region.riskLevel === 'Severe' || region.riskLevel === 'High').length,
       averageHeatIndex: round(
         regionsData.reduce((total, region) => total + region.heatIndex, 0) / regionsData.length,
@@ -234,6 +261,7 @@ app.get('/api/dashboard', async (_request, response) => {
       summary,
       regions: regionsData,
       notifications: buildNotifications(regionsData),
+      alerts: activeAlerts,
       generatedAt: new Date().toISOString(),
       sources: ['Open-Meteo', 'NASA POWER', 'Nominatim']
     });
@@ -245,13 +273,48 @@ app.get('/api/dashboard', async (_request, response) => {
 
 app.get('/api/regions', async (_request, response) => {
   try {
-    const regionsData = await Promise.all(regions.map((region) => buildRegionData(region)));
-    response.json(regionsData);
+    const dbRegions = await getRegions();
+    response.json(dbRegions);
   } catch (error) {
     response.status(500).json({
       error: 'Failed to load live region data',
       message: error.message
     });
+  }
+});
+
+app.post('/api/regions', async (req, res) => {
+  const { query, name } = req.body;
+  if (!query || !name) {
+    return res.status(400).json({ error: 'Missing query or name' });
+  }
+
+  try {
+    const existing = await getRegions();
+    if (existing.find(r => r.name.toLowerCase() === name.toLowerCase())) {
+      return res.status(400).json({ error: 'Region already monitored.' });
+    }
+
+    const coordinates = await getCoordinates(query);
+    const regionObj = {
+      name,
+      query,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      populationAtRisk: '500K',
+      riskLevel: 'Low',
+      temperature: 35,
+      humidity: 40,
+      apparentTemperature: 35,
+      heatIndex: 35,
+      summary: `${name} initialized.`
+    };
+
+    const initialData = await buildRegionData(regionObj);
+    const added = await addRegion(initialData);
+    res.status(201).json(added);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add region', message: error.message });
   }
 });
 

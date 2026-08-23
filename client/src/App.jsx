@@ -68,7 +68,7 @@ function Navbar({ activeTab, onSelectTab }) {
   return (
     <header className="app-nav">
       <div className="nav-brand">
-        <span className="brand-logo" />
+        <span className="brand-logo" role="img" aria-label="SuryaRakshak Logo" title="SuryaRakshak Dashboard" />
         <strong>SuryaRakshak</strong>
       </div>
       <nav className="nav-links">
@@ -77,6 +77,7 @@ function Navbar({ activeTab, onSelectTab }) {
             key={tab.id}
             className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => onSelectTab(tab.id)}
+            title={`View ${tab.label}`}
           >
             {tab.label}
           </button>
@@ -91,6 +92,18 @@ export default function App() {
   const [dashboard, setDashboard] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState('Delhi NCR');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const titles = {
+      dashboard: 'SuryaRakshak | Live Monitor',
+      forecast: 'SuryaRakshak | Heatwave Forecast & Trends',
+      vulnerability: 'SuryaRakshak | Risk Matrix',
+      advisories: 'SuryaRakshak | Heat Advisories',
+      resources: 'SuryaRakshak | Cooling Centers',
+      analytics: 'SuryaRakshak | Climate Analytics'
+    };
+    document.title = titles[activeTab] || 'SuryaRakshak | Heatwave Surveillance & Climate Intelligence';
+  }, [activeTab]);
 
   useEffect(() => {
     let active = true;
@@ -156,7 +169,7 @@ export default function App() {
             <div className="panel-header">
               <div>
                 <span className="eyebrow">Page notifications</span>
-                <h2>Push alerts for this session</h2>
+                <h2>Live Heatwave Push Alerts</h2>
               </div>
               <span className="panel-note">Backend generated, no database</span>
             </div>
@@ -175,15 +188,15 @@ export default function App() {
 
         <section className="hero-panel">
           <div className="hero-copy">
-            <span className="eyebrow">SuryaRakshak</span>
-            <h1>Smart heatwave surveillance for Indian regions.</h1>
+            <span className="eyebrow">SuryaRakshak Climate Intelligence</span>
+            <h1>Smart Heatwave Surveillance for Indian Regions</h1>
             <p>
               Track thermal stress, view district-level risk, and push clear advisories to field teams, health workers,
               and residents before heat becomes a crisis.
             </p>
             <div className="hero-actions">
-              <button className="primary-action" onClick={() => setActiveTab('advisories')}>Live advisory feed</button>
-              <button className="secondary-action" onClick={() => setActiveTab('vulnerability')}>Escalation matrix</button>
+              <button className="primary-action" title="View Live Heat Risk Advisories" onClick={() => setActiveTab('advisories')}>Live advisory feed</button>
+              <button className="secondary-action" title="View Vulnerability Escalation Matrix" onClick={() => setActiveTab('vulnerability')}>Escalation matrix</button>
             </div>
           </div>
 
@@ -200,7 +213,7 @@ export default function App() {
               <div className="panel-header">
                 <div>
                   <span className="eyebrow">Regional watch</span>
-                  <h2>Monitored locations</h2>
+                  <h2>Monitored Heat Risk Locations</h2>
                 </div>
                 <span className="panel-note">Updated every 15 minutes</span>
               </div>
@@ -220,7 +233,7 @@ export default function App() {
               <div className="panel-header">
                 <div>
                   <span className="eyebrow">Selected region</span>
-                  <h2>{currentRegion.name || 'Select Region'}</h2>
+                  <h2>Heat Risk Data for {currentRegion.name || 'Select Region'}</h2>
                 </div>
                 {currentRegion.riskLevel ? <SeverityPill level={currentRegion.riskLevel} /> : null}
               </div>
@@ -239,7 +252,7 @@ export default function App() {
               <div className="panel-header">
                 <div>
                   <span className="eyebrow">Advisory</span>
-                  <h2>Recommended actions</h2>
+                  <h2>Recommended Heat Risk Advisories</h2>
                 </div>
               </div>
               <AdvisoryList items={currentRegion.advisories} />
@@ -250,7 +263,7 @@ export default function App() {
                 <div className="panel-header">
                   <div>
                     <span className="eyebrow">Escalation</span>
-                    <h2>Priority alerts</h2>
+                    <h2>Priority Thermal Stress Alerts</h2>
                   </div>
                 </div>
                 <div className="alert-stack">

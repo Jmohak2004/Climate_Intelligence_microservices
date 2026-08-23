@@ -27,7 +27,7 @@ export function ForecastPage() {
       </header>
 
       <section className="panel section-panel">
-        <h2>Hourly Thermal Index (Today)</h2>
+        <h2>Hourly Thermal Index & Stress Forecast (Today)</h2>
         <div className="trend-grid">
           {data?.hourlyTrend?.map((item) => (
             <div className="trend-card" key={item.time}>
@@ -44,7 +44,7 @@ export function ForecastPage() {
       </section>
 
       <section className="panel section-panel">
-        <h2>7-Day District Projections</h2>
+        <h2>7-Day Regional Heatwave Projections</h2>
         <div className="forecast-table-wrap">
           <table className="custom-table">
             <thead>
@@ -110,7 +110,7 @@ export function VulnerabilityPage() {
       </div>
 
       <section className="panel section-panel">
-        <h2>High-Priority District Watchlist</h2>
+        <h2>High-Priority Heat Risk District Watchlist</h2>
         <div className="district-grid">
           {data?.districts?.map((d) => (
             <article className="district-card" key={d.id}>
@@ -155,7 +155,7 @@ export function AdvisoriesPage() {
     <div className="page-shell">
       <header className="page-header">
         <span className="eyebrow">Public Safety Protocols</span>
-        <h1>Health & Safety Advisories</h1>
+        <h1>Heat Risk Health & Safety Advisories</h1>
         <p>Evidence-based guidelines for citizens, health responders, and municipal workers.</p>
       </header>
 
@@ -236,7 +236,7 @@ export function ResourcesPage() {
 
             <div className="resource-footer">
               <span>Emergency Hotline: <strong>{r.contacts}</strong></span>
-              <button className="secondary-action btn-sm">Get Directions</button>
+              <button className="secondary-action btn-sm" title={`Get directions to ${r.name} cooling center`}>Get Directions</button>
             </div>
           </article>
         ))}
@@ -257,7 +257,7 @@ export function AnalyticsPage() {
       <div className="dashboard-grid">
         <div className="main-column">
           <section className="panel">
-            <h2>30-Day Heat Anomaly Comparison</h2>
+            <h2>30-Day Heat Anomaly & Stress Comparison</h2>
             <p className="panel-note">Observed surface temperature vs 10-year baseline mean (°C)</p>
             <div className="chart-placeholder">
               <div className="chart-bars">
@@ -278,7 +278,7 @@ export function AnalyticsPage() {
 
         <aside className="side-column">
           <section className="panel">
-            <h2>Data Sources & Methodology</h2>
+            <h2>Climate Data Sources & Methodology</h2>
             <ul className="advisory-list">
               <li><strong>Open-Meteo API</strong>: Real-time 2m screen temperature & relative humidity forecast.</li>
               <li><strong>NASA POWER RE</strong>: Surface solar irradiance & daily surface temperature bounds.</li>
