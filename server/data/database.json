@@ -5,39 +5,72 @@
       "query": "Delhi NCR, India",
       "latitude": 28.6139,
       "longitude": 77.209,
-      "populationAtRisk": "1.2M",
-      "riskLevel": "Moderate",
-      "temperature": 38.5,
-      "humidity": 42,
-      "apparentTemperature": 43.1,
-      "heatIndex": 44.2,
-      "summary": "Delhi NCR is currently at moderate heat risk."
+      "temperature": 26.3,
+      "humidity": 77,
+      "apparentTemperature": 30.1,
+      "uvIndexMax": 5.9,
+      "heatIndex": 27,
+      "riskLevel": "Low",
+      "observedAt": "2026-10-07T01:45",
+      "timezone": "GMT+5:30",
+      "nasaPower": {
+        "date": "2026-10-03",
+        "t2mMax": 34
+      },
+      "live": true,
+      "summary": "Delhi NCR is currently at low heat risk.",
+      "advisories": [
+        "Stay hydrated and avoid outdoor exposure during peak heat in Delhi NCR.",
+        "Open cooling centers and support vulnerable groups in Delhi NCR."
+      ]
     },
     {
       "name": "Jaipur",
       "query": "Jaipur, Rajasthan, India",
       "latitude": 26.9124,
       "longitude": 75.7873,
-      "populationAtRisk": "850K",
-      "riskLevel": "High",
-      "temperature": 41.2,
-      "humidity": 35,
-      "apparentTemperature": 46.8,
-      "heatIndex": 47.5,
-      "summary": "Jaipur is currently at high heat risk."
+      "temperature": 27.9,
+      "humidity": 37,
+      "apparentTemperature": 27.4,
+      "uvIndexMax": 6.7,
+      "heatIndex": 27.4,
+      "riskLevel": "Low",
+      "observedAt": "2026-10-07T01:45",
+      "timezone": "GMT+5:30",
+      "nasaPower": {
+        "date": "2026-10-03",
+        "t2mMax": 37
+      },
+      "live": true,
+      "summary": "Jaipur is currently at low heat risk.",
+      "advisories": [
+        "Stay hydrated and avoid outdoor exposure during peak heat in Jaipur.",
+        "Open cooling centers and support vulnerable groups in Jaipur."
+      ]
     },
     {
       "name": "Nagpur",
       "query": "Nagpur, Maharashtra, India",
       "latitude": 21.1458,
       "longitude": 79.0882,
-      "populationAtRisk": "950K",
-      "riskLevel": "High",
-      "temperature": 42,
-      "humidity": 38,
-      "apparentTemperature": 48,
-      "heatIndex": 49.1,
-      "summary": "Nagpur is currently at high heat risk."
+      "temperature": 27.4,
+      "humidity": 58,
+      "apparentTemperature": 29.9,
+      "uvIndexMax": 7.7,
+      "heatIndex": 28.4,
+      "riskLevel": "Low",
+      "observedAt": "2026-10-07T01:45",
+      "timezone": "GMT+5:30",
+      "nasaPower": {
+        "date": "2026-10-03",
+        "t2mMax": 31.4
+      },
+      "live": true,
+      "summary": "Nagpur is currently at low heat risk.",
+      "advisories": [
+        "Stay hydrated and avoid outdoor exposure during peak heat in Nagpur.",
+        "Open cooling centers and support vulnerable groups in Nagpur."
+      ]
     }
   ],
   "advisories": [
@@ -99,21 +132,23 @@
       "id": "r1",
       "name": "Central District Cooling Hub #1",
       "type": "Cooling Shelter",
-      "address": "Connaught Place Sector 4, New Delhi",
+      "address": "Connaught Place, New Delhi",
       "capacity": 350,
       "currentOccupancy": 120,
       "status": "Active",
-      "contacts": "+91 11 2345 6789"
+      "contacts": "112 (emergency) · 108 (ambulance)",
+      "sample": true
     },
     {
       "id": "r2",
       "name": "Vidarbha Heat Relief Camp",
       "type": "Hydration Station",
-      "address": "Sitabuldi Interchange, Nagpur",
+      "address": "Sitabuldi, Nagpur",
       "capacity": 600,
       "currentOccupancy": 280,
       "status": "Active",
-      "contacts": "+91 712 987 6543"
+      "contacts": "112 (emergency) · 108 (ambulance)",
+      "sample": true
     },
     {
       "id": "r3",
@@ -123,7 +158,8 @@
       "capacity": 200,
       "currentOccupancy": 95,
       "status": "Active",
-      "contacts": "+91 141 555 0199"
+      "contacts": "112 (emergency) · 108 (ambulance)",
+      "sample": true
     },
     {
       "id": "r4",
@@ -133,7 +169,8 @@
       "capacity": 450,
       "currentOccupancy": 310,
       "status": "Active",
-      "contacts": "+91 11 8888 2222"
+      "contacts": "112 (emergency) · 108 (ambulance)",
+      "sample": true
     }
   ],
   "awsStations": [
@@ -144,10 +181,11 @@
       "latitude": 28.7041,
       "longitude": 77.1025,
       "status": "Active",
-      "temperature": 38.2,
-      "humidity": 41,
-      "windSpeed": 12,
-      "lastUpdated": "2026-08-18T09:28:53.807Z"
+      "temperature": null,
+      "humidity": null,
+      "windSpeed": null,
+      "lastUpdated": null,
+      "simulated": true
     },
     {
       "id": "aws-2",
@@ -156,10 +194,11 @@
       "latitude": 26.8284,
       "longitude": 75.8056,
       "status": "Active",
-      "temperature": 40.8,
-      "humidity": 36,
-      "windSpeed": 14,
-      "lastUpdated": "2026-08-18T09:28:53.808Z"
+      "temperature": null,
+      "humidity": null,
+      "windSpeed": null,
+      "lastUpdated": null,
+      "simulated": true
     },
     {
       "id": "aws-3",
@@ -168,43 +207,21 @@
       "latitude": 21.0922,
       "longitude": 79.0472,
       "status": "Active",
-      "temperature": 41.9,
-      "humidity": 39,
-      "windSpeed": 10,
-      "lastUpdated": "2026-08-18T09:28:53.808Z"
+      "temperature": null,
+      "humidity": null,
+      "windSpeed": null,
+      "lastUpdated": null,
+      "simulated": true
     }
   ],
   "securityLogs": [
     {
       "id": "log-1",
-      "timestamp": "2026-08-18T08:28:53.808Z",
+      "timestamp": "2026-10-06T07:09:24.297Z",
       "type": "INFO",
       "event": "System startup: AWS validation framework enabled",
-      "details": "Configured z-score threshold: 3.5"
-    },
-    {
-      "id": "log-2",
-      "timestamp": "2026-08-18T08:38:53.808Z",
-      "type": "SUCCESS",
-      "event": "Delhi North-West Station validated",
-      "details": "Variance from satellite: +0.3°C (Status: VALID)"
-    },
-    {
-      "id": "log-3",
-      "timestamp": "2026-08-18T08:48:53.808Z",
-      "type": "SUCCESS",
-      "event": "Jaipur Sanganer Airport Station validated",
-      "details": "Variance from satellite: -0.4°C (Status: VALID)"
+      "details": "Readings are flagged when they differ from the Open-Meteo baseline by more than 5.0°C"
     }
   ],
-  "alerts": [
-    {
-      "id": "alert-1",
-      "region": "Jaipur",
-      "severity": "High",
-      "title": "Jaipur Regional Alert",
-      "message": "High thermal stress observed in Jaipur. Public advisory active.",
-      "timestamp": "2026-08-18T09:28:53.808Z"
-    }
-  ]
+  "alerts": []
 }
