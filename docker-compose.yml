@@ -1,0 +1,73 @@
+name: suryarakshak
+
+x-service: &service
+  restart: unless-stopped
+  depends_on:
+    mongo:
+      condition: service_healthy
+  environment: &service-env
+    MONGODB_URI: mongodb://mongo:27017
+    ALERT_SERVICE_URL: http://alert-service:3002
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  weather-service:
+    <<: *service
+    image: suryarakshak/weather-service:latest
+    build: { context: ., dockerfile: docker/service.Dockerfile, args: { SERVICE: weather-service } }
+    environment: { <<: *service-env, PORT: "3001" }
+    ports: ["3001:3001"]
+
+  alert-service:
+    <<: *service
+    image: suryarakshak/alert-service:latest
+    build: { context: ., dockerfile: docker/service.Dockerfile, args: { SERVICE: alert-service } }
+    environment: { <<: *service-env, PORT: "3002" }
+    ports: ["3002:3002"]
+
+  advisory-service:
+    <<: *service
+    image: suryarakshak/advisory-service:latest
+    build: { context: ., dockerfile: docker/service.Dockerfile, args: { SERVICE: advisory-service } }
+    environment: { <<: *service-env, PORT: "3003" }
+    ports: ["3003:3003"]
+
+  aws-service:
+    <<: *service
+    image: suryarakshak/aws-service:latest
+    build: { context: ., dockerfile: docker/service.Dockerfile, args: { SERVICE: aws-service } }
+    environment: { <<: *service-env, PORT: "3004" }
+    ports: ["3004:3004"]
+
+  auth-service:
+    <<: *service
+    image: suryarakshak/auth-service:latest
+    build: { context: ., dockerfile: docker/service.Dockerfile, args: { SERVICE: auth-service } }
+    environment: { PORT: "3005" }
+    ports: ["3005:3005"]
+
+  frontend:
+    image: suryarakshak/frontend:latest
+    build: { context: ./client }
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - weather-service
+      - alert-service
+      - advisory-service
+      - aws-service
+      - auth-service
+
+volumes:
+  mongo-data:
