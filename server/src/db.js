@@ -16,9 +16,9 @@ if (!fs.existsSync(DATA_DIR)) {
 
 // Default Seed Data
 const DEFAULT_REGIONS = [
-  { name: 'Delhi NCR', query: 'Delhi NCR, India', latitude: 28.6139, longitude: 77.209, populationAtRisk: '1.2M', riskLevel: 'Moderate', temperature: 38.5, humidity: 42, apparentTemperature: 43.1, heatIndex: 44.2, summary: 'Delhi NCR is currently at moderate heat risk.' },
-  { name: 'Jaipur', query: 'Jaipur, Rajasthan, India', latitude: 26.9124, longitude: 75.7873, populationAtRisk: '850K', riskLevel: 'High', temperature: 41.2, humidity: 35, apparentTemperature: 46.8, heatIndex: 47.5, summary: 'Jaipur is currently at high heat risk.' },
-  { name: 'Nagpur', query: 'Nagpur, Maharashtra, India', latitude: 21.1458, longitude: 79.0882, populationAtRisk: '950K', riskLevel: 'High', temperature: 42.0, humidity: 38, apparentTemperature: 48.0, heatIndex: 49.1, summary: 'Nagpur is currently at high heat risk.' }
+  { name: 'Delhi NCR', query: 'Delhi NCR, India', latitude: 28.6139, longitude: 77.209 },
+  { name: 'Jaipur', query: 'Jaipur, Rajasthan, India', latitude: 26.9124, longitude: 75.7873 },
+  { name: 'Nagpur', query: 'Nagpur, Maharashtra, India', latitude: 21.1458, longitude: 79.0882 }
 ];
 
 const DEFAULT_ADVISORIES = [
@@ -54,28 +54,26 @@ const DEFAULT_ADVISORIES = [
   }
 ];
 
+// Placeholder registry: the places are real, the names, capacities and occupancy are samples
+// until operators register actual centres. 112/108 are India's national emergency numbers.
 const DEFAULT_COOLING_CENTERS = [
-  { id: 'r1', name: 'Central District Cooling Hub #1', type: 'Cooling Shelter', address: 'Connaught Place Sector 4, New Delhi', capacity: 350, currentOccupancy: 120, status: 'Active', contacts: '+91 11 2345 6789' },
-  { id: 'r2', name: 'Vidarbha Heat Relief Camp', type: 'Hydration Station', address: 'Sitabuldi Interchange, Nagpur', capacity: 600, currentOccupancy: 280, status: 'Active', contacts: '+91 712 987 6543' },
-  { id: 'r3', name: 'Pink City Thermal Protection Center', type: 'Medical Emergency Ward', address: 'MI Road, Jaipur', capacity: 200, currentOccupancy: 95, status: 'Active', contacts: '+91 141 555 0199' },
-  { id: 'r4', name: 'Yamuna Bank Water & Shelter Unit', type: 'Cooling Shelter', address: 'Kashmere Gate, Delhi', capacity: 450, currentOccupancy: 310, status: 'Active', contacts: '+91 11 8888 2222' }
+  { id: 'r1', name: 'Central District Cooling Hub #1', type: 'Cooling Shelter', address: 'Connaught Place, New Delhi', capacity: 350, currentOccupancy: 120, status: 'Active', contacts: '112 (emergency) · 108 (ambulance)', sample: true },
+  { id: 'r2', name: 'Vidarbha Heat Relief Camp', type: 'Hydration Station', address: 'Sitabuldi, Nagpur', capacity: 600, currentOccupancy: 280, status: 'Active', contacts: '112 (emergency) · 108 (ambulance)', sample: true },
+  { id: 'r3', name: 'Pink City Thermal Protection Center', type: 'Medical Emergency Ward', address: 'MI Road, Jaipur', capacity: 200, currentOccupancy: 95, status: 'Active', contacts: '112 (emergency) · 108 (ambulance)', sample: true },
+  { id: 'r4', name: 'Yamuna Bank Water & Shelter Unit', type: 'Cooling Shelter', address: 'Kashmere Gate, Delhi', capacity: 450, currentOccupancy: 310, status: 'Active', contacts: '112 (emergency) · 108 (ambulance)', sample: true }
 ];
 
 const DEFAULT_AWS_STATIONS = [
-  { id: 'aws-1', name: 'Delhi North-West Station', region: 'Delhi NCR', latitude: 28.7041, longitude: 77.1025, status: 'Active', temperature: 38.2, humidity: 41, windSpeed: 12, lastUpdated: new Date().toISOString() },
-  { id: 'aws-2', name: 'Jaipur Sanganer Airport Station', region: 'Jaipur', latitude: 26.8284, longitude: 75.8056, status: 'Active', temperature: 40.8, humidity: 36, windSpeed: 14, lastUpdated: new Date().toISOString() },
-  { id: 'aws-3', name: 'Nagpur Airport Station', region: 'Nagpur', latitude: 21.0922, longitude: 79.0472, status: 'Active', temperature: 41.9, humidity: 39, windSpeed: 10, lastUpdated: new Date().toISOString() }
+  { id: 'aws-1', name: 'Delhi North-West Station', region: 'Delhi NCR', latitude: 28.7041, longitude: 77.1025, status: 'Active', temperature: null, humidity: null, windSpeed: null, lastUpdated: null, simulated: true },
+  { id: 'aws-2', name: 'Jaipur Sanganer Airport Station', region: 'Jaipur', latitude: 26.8284, longitude: 75.8056, status: 'Active', temperature: null, humidity: null, windSpeed: null, lastUpdated: null, simulated: true },
+  { id: 'aws-3', name: 'Nagpur Airport Station', region: 'Nagpur', latitude: 21.0922, longitude: 79.0472, status: 'Active', temperature: null, humidity: null, windSpeed: null, lastUpdated: null, simulated: true }
 ];
 
 const DEFAULT_SECURITY_LOGS = [
-  { id: 'log-1', timestamp: new Date(Date.now() - 3600000).toISOString(), type: 'INFO', event: 'System startup: AWS validation framework enabled', details: 'Configured z-score threshold: 3.5' },
-  { id: 'log-2', timestamp: new Date(Date.now() - 3000000).toISOString(), type: 'SUCCESS', event: 'Delhi North-West Station validated', details: 'Variance from satellite: +0.3°C (Status: VALID)' },
-  { id: 'log-3', timestamp: new Date(Date.now() - 2400000).toISOString(), type: 'SUCCESS', event: 'Jaipur Sanganer Airport Station validated', details: 'Variance from satellite: -0.4°C (Status: VALID)' }
+  { id: 'log-1', timestamp: new Date().toISOString(), type: 'INFO', event: 'System startup: AWS validation framework enabled', details: 'Readings are flagged when they differ from the Open-Meteo baseline by more than 5.0°C' }
 ];
 
-const DEFAULT_ALERTS = [
-  { id: 'alert-1', region: 'Jaipur', severity: 'High', title: 'Jaipur Regional Alert', message: 'High thermal stress observed in Jaipur. Public advisory active.', timestamp: new Date().toISOString() }
-];
+const DEFAULT_ALERTS = [];
 
 // Initialize Database Object
 let dbState = {
@@ -127,8 +125,9 @@ function saveLocalDb() {
 // MONGOOSE SCHEMAS (If MongoDB is active)
 // ----------------------------------------------------
 const regionSchema = new mongoose.Schema({
-  name: String, query: String, latitude: Number, longitude: Number, populationAtRisk: String,
-  riskLevel: String, temperature: Number, humidity: Number, apparentTemperature: Number, heatIndex: Number, summary: String
+  name: String, query: String, latitude: Number, longitude: Number, riskLevel: String,
+  temperature: Number, humidity: Number, apparentTemperature: Number, uvIndexMax: Number, heatIndex: Number,
+  observedAt: String, timezone: String, nasaPower: mongoose.Schema.Types.Mixed, live: Boolean, summary: String
 });
 const RegionModel = isMongo ? mongoose.model('Region', regionSchema) : null;
 
@@ -138,12 +137,12 @@ const advisorySchema = new mongoose.Schema({
 const AdvisoryModel = isMongo ? mongoose.model('Advisory', advisorySchema) : null;
 
 const coolingCenterSchema = new mongoose.Schema({
-  id: String, name: String, type: String, address: String, capacity: Number, currentOccupancy: Number, status: String, contacts: String
+  id: String, name: String, type: String, address: String, capacity: Number, currentOccupancy: Number, status: String, contacts: String, sample: Boolean
 });
 const CoolingCenterModel = isMongo ? mongoose.model('CoolingCenter', coolingCenterSchema) : null;
 
 const awsStationSchema = new mongoose.Schema({
-  id: String, name: String, region: String, latitude: Number, longitude: Number, status: String, temperature: Number, humidity: Number, windSpeed: Number, lastUpdated: String
+  id: String, name: String, region: String, latitude: Number, longitude: Number, status: String, temperature: Number, humidity: Number, windSpeed: Number, lastUpdated: String, simulated: Boolean
 });
 const AwsStationModel = isMongo ? mongoose.model('AwsStation', awsStationSchema) : null;
 
@@ -271,9 +270,9 @@ export async function updateAWSReading(id, temperature, humidity, windSpeed) {
   }
   const station = dbState.awsStations.find(s => s.id === id);
   if (station) {
-    station.temperature = Number(temperature);
-    station.humidity = Number(humidity);
-    if (windSpeed !== undefined) station.windSpeed = Number(windSpeed);
+    station.temperature = temperature == null ? null : Number(temperature);
+    station.humidity = humidity == null ? null : Number(humidity);
+    if (windSpeed !== undefined) station.windSpeed = windSpeed == null ? null : Number(windSpeed);
     station.lastUpdated = lastUpdated;
     saveLocalDb();
   }

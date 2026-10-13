@@ -22,6 +22,14 @@ export function calculateHeatIndex(temperature, humidity) {
   const t = typeof temperature === 'number' && !isNaN(temperature) ? temperature : 35;
   const r = typeof humidity === 'number' && !isNaN(humidity) ? humidity : 40;
 
+  // The Rothfusz regression below is only valid for roughly t >= 26.7°C (80°F). For
+  // milder air the NWS procedure uses a simple Steadman-style formula instead.
+  if (t < 26.7) {
+    const f = (t * 9) / 5 + 32;
+    const simpleF = 0.5 * (f + 61 + (f - 68) * 1.2 + r * 0.094);
+    return round(((simpleF - 32) * 5) / 9, 1);
+  }
+
   return round(
     -8.784695 + 1.61139411 * t + 2.338549 * r - 0.14611605 * t * r - 0.012308094 * t * t - 0.016424828 * r * r +
       0.002211732 * t * t * r + 0.00072546 * t * r * r - 0.000003582 * t * t * r * r,
