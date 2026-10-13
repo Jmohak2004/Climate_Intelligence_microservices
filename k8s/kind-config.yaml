@@ -1,0 +1,12 @@
+# Multi-node kind cluster: every node is its own Docker container in Docker Desktop.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: suryarakshak
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080   # frontend NodePort
+        hostPort: 8081
+  - role: worker
+  - role: worker
+  - role: worker

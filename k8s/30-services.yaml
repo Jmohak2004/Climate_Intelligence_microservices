@@ -1,0 +1,232 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-service
+  namespace: suryarakshak
+  labels: { app: weather-service }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: weather-service }
+  template:
+    metadata:
+      labels: { app: weather-service }
+    spec:
+      containers:
+        - name: weather-service
+          image: suryarakshak/weather-service:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PORT, value: "3001" }
+          envFrom:
+            - configMapRef: { name: suryarakshak-config }
+          ports:
+            - containerPort: 3001
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3001 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3001 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: weather-service
+  namespace: suryarakshak
+spec:
+  selector: { app: weather-service }
+  ports:
+    - port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-service
+  namespace: suryarakshak
+  labels: { app: alert-service }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: alert-service }
+  template:
+    metadata:
+      labels: { app: alert-service }
+    spec:
+      containers:
+        - name: alert-service
+          image: suryarakshak/alert-service:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PORT, value: "3002" }
+          envFrom:
+            - configMapRef: { name: suryarakshak-config }
+          ports:
+            - containerPort: 3002
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3002 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3002 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-service
+  namespace: suryarakshak
+spec:
+  selector: { app: alert-service }
+  ports:
+    - port: 3002
+      targetPort: 3002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: advisory-service
+  namespace: suryarakshak
+  labels: { app: advisory-service }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: advisory-service }
+  template:
+    metadata:
+      labels: { app: advisory-service }
+    spec:
+      containers:
+        - name: advisory-service
+          image: suryarakshak/advisory-service:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PORT, value: "3003" }
+          envFrom:
+            - configMapRef: { name: suryarakshak-config }
+          ports:
+            - containerPort: 3003
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3003 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3003 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: advisory-service
+  namespace: suryarakshak
+spec:
+  selector: { app: advisory-service }
+  ports:
+    - port: 3003
+      targetPort: 3003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-service
+  namespace: suryarakshak
+  labels: { app: aws-service }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: aws-service }
+  template:
+    metadata:
+      labels: { app: aws-service }
+    spec:
+      containers:
+        - name: aws-service
+          image: suryarakshak/aws-service:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PORT, value: "3004" }
+          envFrom:
+            - configMapRef: { name: suryarakshak-config }
+          ports:
+            - containerPort: 3004
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3004 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3004 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aws-service
+  namespace: suryarakshak
+spec:
+  selector: { app: aws-service }
+  ports:
+    - port: 3004
+      targetPort: 3004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: suryarakshak
+  labels: { app: auth-service }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: auth-service }
+  template:
+    metadata:
+      labels: { app: auth-service }
+    spec:
+      containers:
+        - name: auth-service
+          image: suryarakshak/auth-service:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: PORT, value: "3005" }
+          ports:
+            - containerPort: 3005
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3005 }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3005 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: suryarakshak
+spec:
+  selector: { app: auth-service }
+  ports:
+    - port: 3005
+      targetPort: 3005
