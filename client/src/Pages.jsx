@@ -2,29 +2,107 @@ import { useEffect, useState } from 'react';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-export function ForecastPage() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+async function getJson(path) {
+  const res = await fetch(`${API_BASE}${path}`);
+  if (!res.ok) {
+    throw new Error(`${path} returned ${res.status}`);
+  }
+  return res.json();
+}
+
+function LoadError({ what, message }) {
+  return <p className="panel-note">Could not load {what} ({message}). Please try again shortly.</p>;
+}
+
+function formatDay(isoDate) {
+  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+}
+
+// Same bands as the backend's getRiskLevel, so the forecast table matches the dashboard.
+function riskLabel(heatIndex) {
+  if (heatIndex >= 50) return 'Severe';
+  if (heatIndex >= 46) return 'High';
+  if (heatIndex >= 41) return 'Moderate';
+  return 'Low';
+}
+
+// Loads the monitored regions so location-based pages can query real coordinates.
+function useRegions() {
+  const [regions, setRegions] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [selected, setSelected] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/forecast`)
-      .then((res) => res.json())
+    getJson('/api/regions')
       .then((d) => {
-        setData(d);
-        setLoading(false);
+        const list = Array.isArray(d) ? d.filter((r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude)) : [];
+        setRegions(list);
+        setSelected(list[0]?.name ?? '');
       })
-      .catch(() => setLoading(false));
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
-  if (loading) return <div className="loading-orb-container"><div className="loading-orb" /><p>Loading forecast models...</p></div>;
+  const region = regions.find((r) => r.name === selected) ?? regions[0] ?? null;
+  const query = region ? `?latitude=${region.latitude}&longitude=${region.longitude}` : '';
+  return { regions, loaded, region, query, select: setSelected };
+}
+
+function RegionPicker({ regions, region, onSelect }) {
+  if (regions.length < 2) return null;
+  return (
+    <label className="region-picker">
+      <span className="panel-note">Location</span>
+      <select value={region?.name ?? ''} onChange={(e) => onSelect(e.target.value)}>
+        {regions.map((r) => (
+          <option key={r.name} value={r.name}>{r.name}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+// Fetches `/api/<path><query>` once regions are known and again when the location changes.
+function useLocationData(path, { loaded, query }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!loaded) return;
+    setLoading(true);
+    setError('');
+    getJson(`${path}${query}`)
+      .then(setData)
+      .catch((e) => {
+        setData(null);
+        setError(e.message);
+      })
+      .finally(() => setLoading(false));
+  }, [path, loaded, query]);
+
+  return { data, loading, error };
+}
+
+export function ForecastPage() {
+  const regionState = useRegions();
+  const { regions, region, select } = regionState;
+  const { data, loading, error } = useLocationData('/api/forecast', regionState);
+
+  if (loading) return <div className="loading-orb-container"><div className="loading-orb" /><p>Loading live forecast...</p></div>;
 
   return (
     <div className="page-shell">
       <header className="page-header">
-        <span className="eyebrow">Predictive Analytics</span>
+        <span className="eyebrow">Live Forecast</span>
         <h1>7-Day Heatwave Forecast & Hourly Thermal Trends</h1>
-        <p>Advanced thermal stress modeling based on Open-Meteo & NASA POWER meteorological data.</p>
+        <p>
+          Forecast temperature and humidity from Open-Meteo, converted to a heat index with the NWS Rothfusz regression.
+          Daily values pair the day's maximum temperature with its lowest (afternoon) humidity.
+        </p>
+        <RegionPicker regions={regions} region={region} onSelect={select} />
       </header>
+      {error ? <LoadError what="the forecast" message={error} /> : null}
 
       <section className="panel section-panel">
         <h2>Hourly Thermal Index & Stress Forecast (Today)</h2>
@@ -37,14 +115,14 @@ export function ForecastPage() {
                 <div className="trend-bar" style={{ width: `${Math.min(100, item.heatIndex * 1.8)}%` }} />
               </div>
               <span className="trend-detail">Heat Index: {item.heatIndex}°C</span>
-              <span className="trend-uv">UV Index: {item.uv}</span>
+              <span className="trend-uv">UV Index: {item.uv ?? '--'}</span>
             </div>
           ))}
         </div>
       </section>
 
       <section className="panel section-panel">
-        <h2>7-Day Regional Heatwave Projections</h2>
+        <h2>7-Day Heatwave Projections{region ? ` for ${region.name}` : ''}</h2>
         <div className="forecast-table-wrap">
           <table className="custom-table">
             <thead>
@@ -52,20 +130,27 @@ export function ForecastPage() {
                 <th>Day</th>
                 <th>Max Temp</th>
                 <th>Min Temp</th>
+                <th>Lowest Humidity</th>
+                <th>Peak UV</th>
                 <th>Heat Index</th>
                 <th>Risk Classification</th>
               </tr>
             </thead>
             <tbody>
-              {data?.sevenDayForecast?.map((row) => (
-                <tr key={row.day}>
-                  <td><strong>{row.day}</strong></td>
-                  <td>{row.maxTemp}°C</td>
-                  <td>{row.minTemp}°C</td>
-                  <td><strong className="accent-text">{row.heatIndex}°C</strong></td>
-                  <td><span className={`pill pill-${row.risk.toLowerCase()}`}>{row.risk}</span></td>
-                </tr>
-              ))}
+              {data?.sevenDayForecast?.map((row) => {
+                const risk = riskLabel(row.heatIndex);
+                return (
+                  <tr key={row.date}>
+                    <td><strong>{row.day}</strong> <span className="panel-note">{formatDay(row.date)}</span></td>
+                    <td>{row.maxTemp}°C</td>
+                    <td>{row.minTemp}°C</td>
+                    <td>{row.humidityMin}%</td>
+                    <td>{row.uvMax ?? '--'}</td>
+                    <td><strong className="accent-text">{row.heatIndex}°C</strong></td>
+                    <td><span className={`pill pill-${risk.toLowerCase()}`}>{risk}</span></td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -74,81 +159,81 @@ export function ForecastPage() {
   );
 }
 
-export function VulnerabilityPage() {
+export function ExposurePage() {
   const [data, setData] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/vulnerability`)
-      .then((res) => res.json())
-      .then((d) => setData(d));
+    getJson('/api/exposure').then(setData).catch((e) => setError(e.message));
   }, []);
+
+  const rows = data?.regions ?? [];
+  const maxDays = Math.max(1, ...rows.map((r) => r.avgDaysAbove40 ?? 0));
 
   return (
     <div className="page-shell">
       <header className="page-header">
-        <span className="eyebrow">Risk Matrix</span>
-        <h1>District Vulnerability Index</h1>
-        <p>Vulnerability scoring based on population density, socio-economic factors, and thermal exposure.</p>
+        <span className="eyebrow">Heat Exposure</span>
+        <h1>Regional Heat Exposure Ranking</h1>
+        <p>
+          How often each monitored region reaches 40°C and 45°C, the daily maximum temperatures at which India's heat-wave
+          criteria begin, measured over the last ten years of ERA5 reanalysis data from Open-Meteo.
+        </p>
       </header>
+      {error ? <LoadError what="exposure data" message={error} /> : null}
+      {!data && !error ? <div className="loading-orb-container"><div className="loading-orb" /><p>Analysing 10 years of climate data...</p></div> : null}
 
-      <div className="hero-metrics gap-bottom">
-        <div className="metric-card">
-          <span className="metric-label">Monitored Districts</span>
-          <strong className="metric-value">{data?.summary?.totalDistricts ?? 142}</strong>
-          <span className="metric-detail">Across high-risk states</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">Extreme Vulnerability</span>
-          <strong className="metric-value severe-text">{data?.summary?.extremeVulnerability ?? 18}</strong>
-          <span className="metric-detail">Immediate action required</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-label">High Risk Zones</span>
-          <strong className="metric-value high-text">{data?.summary?.highVulnerability ?? 44}</strong>
-          <span className="metric-detail">Escalation active</span>
-        </div>
-      </div>
-
-      <section className="panel section-panel">
-        <h2>High-Priority Heat Risk District Watchlist</h2>
-        <div className="district-grid">
-          {data?.districts?.map((d) => (
-            <article className="district-card" key={d.id}>
-              <div className="district-header">
-                <div>
-                  <strong>{d.name}</strong>
-                  <span className="district-sub">{d.state} • Pop: {d.population}</span>
+      {data ? (
+        <section className="panel section-panel">
+          <h2>Monitored Regions, Hottest First</h2>
+          <div className="district-grid">
+            {rows.map((r, index) => (
+              <article className="district-card" key={r.name}>
+                <div className="district-header">
+                  <div>
+                    <strong>#{index + 1} {r.name}</strong>
+                    <span className="district-sub">
+                      Hottest day on record: {r.hottestDay?.temp}°C ({formatDay(r.hottestDay?.date)} {r.hottestDay?.date?.slice(0, 4)})
+                    </span>
+                  </div>
                 </div>
-                <span className={`pill pill-${d.riskTier.toLowerCase()}`}>{d.riskTier}</span>
-              </div>
-              <div className="vulnerability-bar-wrap">
-                <div className="vulnerability-label">
-                  <span>Vulnerability Score</span>
-                  <strong>{d.vulnerabilityScore}/100</strong>
+                <div className="vulnerability-bar-wrap">
+                  <div className="vulnerability-label">
+                    <span>Avg. days ≥ 40°C per year</span>
+                    <strong>{r.avgDaysAbove40}</strong>
+                  </div>
+                  <div className="bar-bg">
+                    <div className="bar-fill" style={{ width: `${((r.avgDaysAbove40 ?? 0) / maxDays) * 100}%` }} />
+                  </div>
                 </div>
-                <div className="bar-bg">
-                  <div className="bar-fill" style={{ width: `${d.vulnerabilityScore}%` }} />
+                <div className="district-meta">
+                  <span>Avg. days ≥ 45°C per year: <strong>{r.avgDaysAbove45}</strong></span>
+                  <span>
+                    {r.currentYear.year} so far: <strong>{r.currentYear.daysAbove40}</strong> days ≥ 40°C, <strong>{r.currentYear.daysAbove45}</strong> ≥ 45°C
+                  </span>
                 </div>
-              </div>
-              <div className="district-meta">
-                <span>Cooling Shelters: <strong>{d.coolingCenters}</strong></span>
-                <span>Hospital Emergency Beds: <strong>{d.hospitalBeds}</strong></span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+              </article>
+            ))}
+          </div>
+          {data.unavailable?.length ? <p className="panel-note">No data this time for: {data.unavailable.join(', ')}.</p> : null}
+          <p className="panel-note">
+            Source: {data.source}, {data.period}. Yearly averages use complete calendar years only. Reanalysis grid cells are
+            about 25 km wide, so values are regional rather than weather-station readings.
+          </p>
+        </section>
+      ) : null}
     </div>
   );
 }
 
 export function AdvisoriesPage() {
   const [advisories, setAdvisories] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/health-advisories`)
-      .then((res) => res.json())
-      .then((d) => setAdvisories(d));
+    getJson('/api/health-advisories')
+      .then((d) => setAdvisories(Array.isArray(d) ? d : []))
+      .catch((e) => setError(e.message));
   }, []);
 
   return (
@@ -156,8 +241,9 @@ export function AdvisoriesPage() {
       <header className="page-header">
         <span className="eyebrow">Public Safety Protocols</span>
         <h1>Heat Risk Health & Safety Advisories</h1>
-        <p>Evidence-based guidelines for citizens, health responders, and municipal workers.</p>
+        <p>General guidelines for citizens, health responders, and municipal workers.</p>
       </header>
+      {error ? <LoadError what="advisories" message={error} /> : null}
 
       <div className="advisory-cards-stack">
         {advisories.map((adv) => (
@@ -199,11 +285,12 @@ export function AdvisoriesPage() {
 
 export function ResourcesPage() {
   const [resources, setResources] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/resources`)
-      .then((res) => res.json())
-      .then((d) => setResources(d));
+    getJson('/api/resources')
+      .then((d) => setResources(Array.isArray(d) ? d : []))
+      .catch((e) => setError(e.message));
   }, []);
 
   return (
@@ -211,15 +298,19 @@ export function ResourcesPage() {
       <header className="page-header">
         <span className="eyebrow">Field Logistics</span>
         <h1>Cooling Centers & Relief Directory</h1>
-        <p>Real-time occupancy tracking for community cooling centers and emergency hydration shelters.</p>
+        <p>
+          Occupancy tracking for community cooling centers and hydration shelters. Entries marked "Sample" are placeholders
+          until operators register real centers through the API. In an emergency, call 112 (or 108 for an ambulance).
+        </p>
       </header>
+      {error ? <LoadError what="cooling centers" message={error} /> : null}
 
       <div className="resource-grid">
         {resources.map((r) => (
           <article className="panel resource-card" key={r.id}>
             <div className="resource-header">
               <span className="eyebrow">{r.type}</span>
-              <span className="status-badge status-active">{r.status}</span>
+              <span className="status-badge status-active">{r.sample ? `Sample · ${r.status}` : r.status}</span>
             </div>
             <h2>{r.name}</h2>
             <p className="resource-address">{r.address}</p>
@@ -230,13 +321,21 @@ export function ResourcesPage() {
                 <strong>{r.currentOccupancy} / {r.capacity} Seats</strong>
               </div>
               <div className="bar-bg">
-                <div className="bar-fill" style={{ width: `${(r.currentOccupancy / r.capacity) * 100}%` }} />
+                <div className="bar-fill" style={{ width: `${Math.min(100, (r.currentOccupancy / r.capacity) * 100)}%` }} />
               </div>
             </div>
 
             <div className="resource-footer">
-              <span>Emergency Hotline: <strong>{r.contacts}</strong></span>
-              <button className="secondary-action btn-sm" title={`Get directions to ${r.name} cooling center`}>Get Directions</button>
+              <span>Emergency: <strong>{r.contacts}</strong></span>
+              <a
+                className="secondary-action btn-sm"
+                title={`Get directions to ${r.name} cooling center`}
+                href={`https://www.openstreetmap.org/search?query=${encodeURIComponent(r.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Get Directions
+              </a>
             </div>
           </article>
         ))}
@@ -245,48 +344,126 @@ export function ResourcesPage() {
   );
 }
 
+function TrendChart({ series }) {
+  const W = 640;
+  const H = 260;
+  const pad = { left: 40, right: 12, top: 12, bottom: 28 };
+  const values = series.flatMap((p) => [p.observed, p.baseline]).filter((v) => v !== null);
+  if (!values.length) return null;
+
+  const lo = Math.floor(Math.min(...values)) - 1;
+  const hi = Math.ceil(Math.max(...values)) + 1;
+  const x = (i) => pad.left + (i / (series.length - 1)) * (W - pad.left - pad.right);
+  const y = (v) => pad.top + (1 - (v - lo) / (hi - lo)) * (H - pad.top - pad.bottom);
+
+  // Break the line wherever a value is missing instead of bridging the gap.
+  const line = (key) =>
+    series
+      .map((p, i) => (p[key] === null ? null : `${series[i - 1]?.[key] == null ? 'M' : 'L'}${x(i)},${y(p[key])}`))
+      .filter(Boolean)
+      .join(' ');
+
+  const ticks = Array.from({ length: 5 }, (_, i) => lo + ((hi - lo) * i) / 4);
+  const labelIndexes = [0, Math.floor((series.length - 1) / 2), series.length - 1];
+
+  return (
+    <svg className="trend-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Daily maximum temperature against the ten-year baseline">
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={pad.left} x2={W - pad.right} y1={y(t)} y2={y(t)} stroke="rgba(255,255,255,0.08)" />
+          <text x={pad.left - 6} y={y(t) + 4} textAnchor="end" fontSize="11" fill="rgba(255,255,255,0.6)">{Math.round(t)}°</text>
+        </g>
+      ))}
+      <path d={line('baseline')} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" strokeDasharray="5 4" />
+      <path d={line('observed')} fill="none" stroke="#ff7256" strokeWidth="2.5" />
+      {series.map((p, i) =>
+        p.observed === null ? null : (
+          <circle key={p.date} cx={x(i)} cy={y(p.observed)} r="3.5" fill="#ff7256">
+            <title>{`${formatDay(p.date)}: ${p.observed}°C observed, ${p.baseline ?? '--'}°C baseline`}</title>
+          </circle>
+        )
+      )}
+      {labelIndexes.map((i) => (
+        <text
+          key={i}
+          x={x(i)}
+          y={H - 8}
+          textAnchor={i === 0 ? 'start' : i === series.length - 1 ? 'end' : 'middle'}
+          fontSize="11"
+          fill="rgba(255,255,255,0.6)"
+        >
+          {formatDay(series[i].date)}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
 export function AnalyticsPage() {
+  const regionState = useRegions();
+  const { regions, region, select } = regionState;
+  const { data, loading, error } = useLocationData('/api/analytics', regionState);
+  const summary = data?.summary;
+
   return (
     <div className="page-shell">
       <header className="page-header">
         <span className="eyebrow">Climate Intelligence</span>
-        <h1>Heat Index Analytics & Historical Comparative Analysis</h1>
-        <p>Multi-year satellite thermal telemetry provided by Open-Meteo & NASA POWER RE Community datasets.</p>
+        <h1>Temperature Anomaly Analysis</h1>
+        <p>The last 30 days of observed daily maximum temperature compared with the same dates over the previous ten years.</p>
+        <RegionPicker regions={regions} region={region} onSelect={select} />
       </header>
+      {error ? <LoadError what="historical climate data" message={error} /> : null}
+      {loading ? <div className="loading-orb-container"><div className="loading-orb" /><p>Loading historical climate data...</p></div> : null}
 
-      <div className="dashboard-grid">
-        <div className="main-column">
-          <section className="panel">
-            <h2>30-Day Heat Anomaly & Stress Comparison</h2>
-            <p className="panel-note">Observed surface temperature vs 10-year baseline mean (°C)</p>
-            <div className="chart-placeholder">
-              <div className="chart-bars">
-                {[38, 41, 44, 42, 45, 47, 43, 40, 42, 46, 48, 45, 41, 39, 42].map((val, idx) => (
-                  <div className="chart-bar-group" key={idx}>
-                    <div className="bar-actual" style={{ height: `${val * 2}px` }} title={`Actual: ${val}°C`} />
-                    <div className="bar-baseline" style={{ height: `${(val - 3) * 2}px` }} title="Baseline" />
-                  </div>
-                ))}
+      {data && !loading ? (
+        <div className="dashboard-grid">
+          <div className="main-column">
+            <section className="panel">
+              <h2>30-Day Maximum Temperature vs Ten-Year Baseline{region ? `: ${region.name}` : ''}</h2>
+              <p className="panel-note">
+                {formatDay(data.period.start)} to {formatDay(data.period.end)} {data.period.end.slice(0, 4)}. Baseline is the mean of the
+                same dates (±3 days) in {data.baselinePeriod}.
+              </p>
+              <div className="chart-placeholder">
+                <TrendChart series={data.series} />
+                <div className="chart-legend">
+                  <span><i className="legend-dot actual-dot" /> Observed daily maximum (°C)</span>
+                  <span><i className="legend-dot baseline-dot" /> {data.baselinePeriod} mean (°C)</span>
+                </div>
               </div>
-              <div className="chart-legend">
-                <span><i className="legend-dot actual-dot" /> 2026 Observed Heat Index</span>
-                <span><i className="legend-dot baseline-dot" /> 10-Year Historical Mean</span>
-              </div>
-            </div>
-          </section>
+            </section>
+          </div>
+
+          <aside className="side-column">
+            <section className="panel">
+              <h2>Summary</h2>
+              <ul className="advisory-list">
+                <li>
+                  Average anomaly: <strong>{summary.meanAnomaly > 0 ? '+' : ''}{summary.meanAnomaly}°C</strong>
+                </li>
+                <li>
+                  Warmer than baseline on <strong>{summary.daysAboveBaseline} of {summary.daysCompared}</strong> days
+                </li>
+                {summary.hottestDay ? (
+                  <li>
+                    Hottest day: <strong>{summary.hottestDay.temp}°C</strong> on {formatDay(summary.hottestDay.date)}
+                  </li>
+                ) : null}
+              </ul>
+            </section>
+            <section className="panel">
+              <h2>Data Sources & Methodology</h2>
+              <ul className="advisory-list">
+                <li><strong>Open-Meteo Historical Weather API</strong>: ERA5 reanalysis daily maximum 2 m temperature, 2016 onward. The latest days trail real time by about five days.</li>
+                <li><strong>Open-Meteo Forecast API</strong>: live temperature, humidity and forecasts used on the Live Monitor and Forecast pages.</li>
+                <li><strong>NASA POWER</strong>: latest available daily maximum temperature, shown on the Live Monitor.</li>
+                <li><strong>Heat index</strong>: NWS Rothfusz regression (Steadman formula below 26.7°C).</li>
+              </ul>
+            </section>
+          </aside>
         </div>
-
-        <aside className="side-column">
-          <section className="panel">
-            <h2>Climate Data Sources & Methodology</h2>
-            <ul className="advisory-list">
-              <li><strong>Open-Meteo API</strong>: Real-time 2m screen temperature & relative humidity forecast.</li>
-              <li><strong>NASA POWER RE</strong>: Surface solar irradiance & daily surface temperature bounds.</li>
-              <li><strong>Rothfusz Heat Index Formula</strong>: NWS multi-variable equation computing human thermal discomfort.</li>
-            </ul>
-          </section>
-        </aside>
-      </div>
+      ) : null}
     </div>
   );
 }

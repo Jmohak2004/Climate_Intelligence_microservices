@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   ForecastPage,
-  VulnerabilityPage,
+  ExposurePage,
   AdvisoriesPage,
   ResourcesPage,
   AnalyticsPage
@@ -34,12 +34,12 @@ function RegionCard({ region, isActive, onSelect }) {
     <button className={`region-card ${isActive ? 'active' : ''}`} onClick={() => onSelect(region.name)}>
       <div className="region-card-top">
         <strong>{region.name}</strong>
-        <SeverityPill level={region.riskLevel} />
+        {region.riskLevel ? <SeverityPill level={region.riskLevel} /> : <span className="pill pill-unavailable">No data</span>}
       </div>
       <p>{region.summary}</p>
       <div className="region-card-meta">
-        <span>{region.temperature}°C</span>
-        <span>{region.humidity}% humidity</span>
+        <span>{region.temperature ?? '--'}°C</span>
+        <span>{region.humidity ?? '--'}% humidity</span>
       </div>
     </button>
   );
@@ -59,7 +59,7 @@ function Navbar({ activeTab, onSelectTab }) {
   const tabs = [
     { id: 'dashboard', label: 'Live Monitor' },
     { id: 'forecast', label: 'Forecast & Trends' },
-    { id: 'vulnerability', label: 'Risk Matrix' },
+    { id: 'vulnerability', label: 'Heat Exposure' },
     { id: 'advisories', label: 'Advisories' },
     { id: 'resources', label: 'Cooling Centers' },
     { id: 'analytics', label: 'Analytics' }
@@ -97,7 +97,7 @@ export default function App() {
     const titles = {
       dashboard: 'SuryaRakshak | Live Monitor',
       forecast: 'SuryaRakshak | Heatwave Forecast & Trends',
-      vulnerability: 'SuryaRakshak | Risk Matrix',
+      vulnerability: 'SuryaRakshak | Heat Exposure',
       advisories: 'SuryaRakshak | Heat Advisories',
       resources: 'SuryaRakshak | Cooling Centers',
       analytics: 'SuryaRakshak | Climate Analytics'
@@ -107,35 +107,45 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
+    let firstLoad = true;
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    fetch(`${apiBaseUrl}/api/dashboard`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to load dashboard data');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        if (active) {
+    const load = () =>
+      fetch(`${apiBaseUrl}/api/dashboard`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Live heat-risk data is temporarily unavailable. Please try again shortly.');
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (!active) return;
           setDashboard(data);
-          setSelectedRegion(data.regions[0]?.name ?? '');
-        }
-      })
-      .catch((fetchError) => {
-        if (active) {
-          setError(fetchError.message);
-        }
-      });
+          setError('');
+          if (firstLoad) {
+            setSelectedRegion(data.regions[0]?.name ?? '');
+            firstLoad = false;
+          }
+        })
+        .catch((fetchError) => {
+          // Keep showing the last good data if a background refresh fails.
+          if (active && firstLoad) {
+            setError(fetchError.message);
+          }
+        });
+
+    load();
+    const timer = setInterval(load, 15 * 60 * 1000);
 
     return () => {
       active = false;
+      clearInterval(timer);
     };
   }, []);
 
   const renderContent = () => {
     if (activeTab === 'forecast') return <ForecastPage />;
-    if (activeTab === 'vulnerability') return <VulnerabilityPage />;
+    if (activeTab === 'vulnerability') return <ExposurePage />;
     if (activeTab === 'advisories') return <AdvisoriesPage />;
     if (activeTab === 'resources') return <ResourcesPage />;
     if (activeTab === 'analytics') return <AnalyticsPage />;
@@ -171,7 +181,7 @@ export default function App() {
                 <span className="eyebrow">Page notifications</span>
                 <h2>Live Heatwave Push Alerts</h2>
               </div>
-              <span className="panel-note">Backend generated, no database</span>
+              <span className="panel-note">Derived from live Open-Meteo readings</span>
             </div>
             <div className="alert-stack">
               {dashboard.notifications.map((notification) => (
@@ -196,14 +206,14 @@ export default function App() {
             </p>
             <div className="hero-actions">
               <button className="primary-action" title="View Live Heat Risk Advisories" onClick={() => setActiveTab('advisories')}>Live advisory feed</button>
-              <button className="secondary-action" title="View Vulnerability Escalation Matrix" onClick={() => setActiveTab('vulnerability')}>Escalation matrix</button>
+              <button className="secondary-action" title="View regional heat exposure ranking" onClick={() => setActiveTab('vulnerability')}>Heat exposure</button>
             </div>
           </div>
 
           <div className="hero-metrics">
             <MetricCard label="Active alerts" value={dashboard.summary?.activeAlerts ?? 0} detail="Across monitored regions" />
             <MetricCard label="High-risk districts" value={dashboard.summary?.highRiskDistricts ?? 0} detail="Requires intervention" />
-            <MetricCard label="Average heat index" value={`${dashboard.summary?.averageHeatIndex ?? 0}°C`} detail="Regional mean" />
+            <MetricCard label="Average heat index" value={dashboard.summary?.averageHeatIndex != null ? `${dashboard.summary.averageHeatIndex}°C` : '--'} detail={`${dashboard.summary?.regionsLive ?? 0} of ${dashboard.summary?.regionsMonitored ?? 0} regions reporting live`} />
           </div>
         </section>
 
@@ -215,7 +225,7 @@ export default function App() {
                   <span className="eyebrow">Regional watch</span>
                   <h2>Monitored Heat Risk Locations</h2>
                 </div>
-                <span className="panel-note">Updated every 15 minutes</span>
+                <span className="panel-note">Refreshes every 15 minutes</span>
               </div>
               <div className="region-list">
                 {regionsList.map((region) => (
@@ -241,9 +251,14 @@ export default function App() {
                 <MetricCard label="Temperature" value={`${currentRegion.temperature ?? '--'}°C`} detail="2m screen temperature" />
                 <MetricCard label="Humidity" value={`${currentRegion.humidity ?? '--'}%`} detail="Relative humidity" />
                 <MetricCard label="Heat index" value={`${currentRegion.heatIndex ?? '--'}°C`} detail="Computed exposure load" />
-                <MetricCard label="Population at risk" value={currentRegion.populationAtRisk ?? 'N/A'} detail="Estimated vulnerable group" />
+                <MetricCard label="Feels like" value={`${currentRegion.apparentTemperature ?? '--'}°C`} detail="Apparent temperature" />
               </div>
               <p className="region-summary">{currentRegion.summary}</p>
+              <p className="panel-note">
+                {currentRegion.observedAt ? `Observed ${currentRegion.observedAt.replace('T', ' ')} ${currentRegion.timezone ?? ''}. ` : ''}
+                {currentRegion.uvIndexMax != null ? `Today's peak UV index: ${currentRegion.uvIndexMax}. ` : ''}
+                {currentRegion.nasaPower ? `NASA POWER daily max (${currentRegion.nasaPower.date}): ${currentRegion.nasaPower.t2mMax}°C.` : ''}
+              </p>
             </div>
           </div>
 

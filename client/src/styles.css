@@ -738,6 +738,8 @@ button:focus-visible {
 }
 
 .btn-sm {
+  display: inline-block;
+  text-decoration: none;
   padding: 6px 12px;
   font-size: 0.78rem;
 }
@@ -850,4 +852,42 @@ button:focus-visible {
     padding: 18px;
     border-radius: 18px;
   }
+}
+
+.pill-unavailable {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.region-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.region-picker select {
+  background: rgba(255, 255, 255, 0.06);
+  color: #eef4fb;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.region-picker option {
+  color: #07111f;
+}
+
+.trend-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pill-low {
+  background: rgba(96, 214, 140, 0.14);
+  color: #9be8b8;
+  border-color: rgba(96, 214, 140, 0.26);
 }
