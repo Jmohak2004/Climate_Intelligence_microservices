@@ -106,6 +106,35 @@ Images are built directly into Minikube's Docker daemon (`eval $(minikube docker
 Each service runs 2 replicas behind a ClusterIP Service; the frontend is exposed as a NodePort.
 Re-run the script after code changes to rebuild and roll out.
 
+### Monitoring (Prometheus + Grafana)
+Every service exposes Prometheus metrics at `/metrics` (via `prom-client` in `services/common`):
+
+| Metric | Meaning |
+|---|---|
+| `http_requests_total{method,route,status}` | Requests handled, by route pattern and status code |
+| `http_request_duration_seconds` | Request latency histogram |
+| `service_ready` | 1 when the service and its database are ready |
+| `service_calls_total{target,outcome}` | Calls to other microservices, success or failure |
+| `process_*`, `nodejs_*` | CPU, memory, event-loop lag and other Node.js defaults |
+
+Prometheus discovers service pods through their `prometheus.io/scrape` and `prometheus.io/port` annotations
+(it only has read access to pods in the `suryarakshak` namespace). Grafana is provisioned with the Prometheus
+data source and a **SuryaRakshak Microservices** dashboard, viewable without signing in.
+
+| | Kubernetes | Compose |
+|---|---|---|
+| Grafana | http://localhost:30030 | http://localhost:3000 |
+| Prometheus | http://localhost:30090 | http://localhost:9090 |
+
+Config lives in `k8s/monitoring/` (shared by both setups) and `docker/prometheus.yml` (Compose scrape targets).
+Example queries:
+```promql
+sum by (service) (up{job="suryarakshak-services"})
+sum by (service) (rate(http_requests_total[5m]))
+histogram_quantile(0.95, sum by (service, le) (rate(http_request_duration_seconds_bucket[5m])))
+sum by (service, target, outcome) (service_calls_total)
+```
+
 ### Running a single service locally (no Docker, in-memory data)
 ```bash
 cd services/common && npm install

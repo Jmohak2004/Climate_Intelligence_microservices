@@ -12,10 +12,12 @@ docker compose build
 
 kubectl apply -k k8s
 kubectl -n suryarakshak rollout restart deployment "${SERVICES[@]}" frontend >/dev/null
-for d in mongo "${SERVICES[@]}" frontend; do
+for d in mongo "${SERVICES[@]}" frontend prometheus grafana; do
   kubectl -n suryarakshak rollout status deployment "$d" --timeout=180s
 done
 
 echo
-echo "Running at http://localhost:30080"
+echo "App:        http://localhost:30080"
+echo "Grafana:    http://localhost:30030"
+echo "Prometheus: http://localhost:30090"
 kubectl -n suryarakshak get pods -o wide
