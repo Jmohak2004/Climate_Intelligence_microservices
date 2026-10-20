@@ -6,3 +6,20 @@ resources:
   - 20-mongo.yaml
   - 30-services.yaml
   - 40-frontend.yaml
+  - 50-monitoring.yaml
+
+# Config files live in k8s/monitoring/ so Docker Compose can mount the same files.
+# The generated names carry a content hash, so editing a file rolls out its pod.
+configMapGenerator:
+  - name: prometheus-config
+    namespace: suryarakshak
+    files: [monitoring/prometheus.yml]
+  - name: grafana-datasources
+    namespace: suryarakshak
+    files: [monitoring/grafana-datasource.yml]
+  - name: grafana-dashboard-provider
+    namespace: suryarakshak
+    files: [monitoring/grafana-dashboards.yml]
+  - name: grafana-dashboards
+    namespace: suryarakshak
+    files: [monitoring/suryarakshak-dashboard.json]

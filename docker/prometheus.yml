@@ -1,0 +1,17 @@
+# Docker Compose: one container per service, reached by its Compose DNS name.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: suryarakshak-services
+    static_configs:
+      - { targets: ["weather-service:3001"], labels: { service: weather-service } }
+      - { targets: ["alert-service:3002"], labels: { service: alert-service } }
+      - { targets: ["advisory-service:3003"], labels: { service: advisory-service } }
+      - { targets: ["aws-service:3004"], labels: { service: aws-service } }
+      - { targets: ["auth-service:3005"], labels: { service: auth-service } }
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
